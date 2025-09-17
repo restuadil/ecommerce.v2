@@ -52,4 +52,8 @@ export class BrandsRepository {
       data,
     });
   }
+
+  async delete(id: string): Promise<Brand> {
+    return await this.prismaService.brand.delete({ where: { id } });
+  }
 }

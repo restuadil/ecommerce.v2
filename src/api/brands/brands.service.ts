@@ -79,4 +79,14 @@ export class BrandsService {
 
     return updated;
   }
+
+  async delete(id: string): Promise<void> {
+    this.logger.warn(`Deleting brand with id: ${id}`);
+
+    await this.findOneById(id);
+
+    await this.brandsRepository.delete(id);
+
+    await this.redisService.deleteByPattern("brands*");
+  }
 }

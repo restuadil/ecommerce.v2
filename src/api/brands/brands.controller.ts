@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -92,6 +93,19 @@ export class BrandsController {
     return {
       message: "Brand updated successfully",
       data: result,
+    };
+  }
+
+  @Delete(":id")
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.SUPER_ADMIN)
+  async delete(@Param("id", new ZodPipe(idSchema)) id: string): Promise<ControllerResponse<null>> {
+    this.logger.info(`BrandsController - Delete: ${id}`);
+
+    await this.brandsService.delete(id);
+    return {
+      message: "Brand deleted successfully",
+      data: null,
     };
   }
 }
