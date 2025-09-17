@@ -1,4 +1,14 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Param,
+  Post,
+  Query,
+} from "@nestjs/common";
 
 import { UserRole } from "@prisma/client";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
@@ -12,6 +22,7 @@ import { ControllerResponse } from "src/types/web.type";
 
 import { CategoriesService } from "./categories.service";
 import { CreateCategoryDto, createCategorySchema } from "./dto/create-category.dto";
+import { QueryCategoryDto, queryCategorySchema } from "./dto/query-category.dto";
 import { ResponseCategoryDto } from "./dto/response-category.dto";
 
 @Controller("categories")
@@ -46,6 +57,22 @@ export class CategoriesController {
     return {
       message: "Category fetched successfully",
       data: result,
+    };
+  }
+
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  async findAll(
+    @Query(new ZodPipe(queryCategorySchema)) queryCategoryDto: QueryCategoryDto,
+  ): Promise<ControllerResponse<ResponseCategoryDto[]>> {
+    this.logger.info(`CategoyController - FindAll`);
+
+    const { data, meta } = await this.categoriesService.findAll(queryCategoryDto);
+    return {
+      message: "Categories fetched successfully",
+      data,
+      meta,
     };
   }
 }
