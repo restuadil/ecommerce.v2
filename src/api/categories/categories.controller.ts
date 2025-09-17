@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -90,6 +91,18 @@ export class CategoriesController {
     return {
       message: "Category updated successfully",
       data: category,
+    };
+  }
+
+  @Delete(":id")
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.SUPER_ADMIN)
+  async delete(@Param("id", new ZodPipe(idSchema)) id: string): Promise<ControllerResponse<null>> {
+    this.logger.info(`CategoyController - Delete: ${id}`);
+    await this.categoriesService.delete(id);
+    return {
+      message: "Category deleted successfully",
+      data: null,
     };
   }
 }

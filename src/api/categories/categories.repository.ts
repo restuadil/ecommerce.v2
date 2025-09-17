@@ -70,10 +70,16 @@ export class CategoriesRepository {
     });
   }
 
-  update(id: string, data: Prisma.CategoryUpdateInput): Promise<Category> {
-    return this.prismaService.category.update({
+  async update(id: string, data: Prisma.CategoryUpdateInput): Promise<Category> {
+    return await this.prismaService.category.update({
       where: { id },
       data,
+    });
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.prismaService.category.delete({
+      where: { id },
     });
   }
 }
