@@ -1,6 +1,12 @@
 import { randomBytes } from "crypto";
 
-import { BadRequestException, ConflictException, Inject, Injectable } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { JwtService } from "@nestjs/jwt";
 
@@ -19,7 +25,9 @@ import { RegisterCustomerDto } from "./dto/register-customer.dto";
 import { RegisterStoreAdminDto } from "./dto/register-store-admin.dto";
 import {
   LoginResponseDto,
+  MeResponseDto,
   RegisterResponseDto,
+  toMeResponseDto,
   toRegisterResponseDto,
 } from "./dto/response-auth.dt";
 import { UsersService } from "../users/users.service";
@@ -142,5 +150,12 @@ export class AuthService {
     });
 
     return toRegisterResponseDto(updatedUser);
+  }
+
+  async me(me: UserPayload): Promise<MeResponseDto> {
+    this.logger.info(`Fetching profile for user id: ${me.id}`);
+    const user = await this.usersService.findOneById(me.id);
+    if (!user) throw new NotFoundException("User not found");
+    return toMeResponseDto(user);
   }
 }

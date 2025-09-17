@@ -15,6 +15,13 @@ export class UsersRepository {
       },
     });
   }
+
+  async findOneById(id: string): Promise<User | null> {
+    return this.prismaService.user.findUnique({
+      where: { id },
+    });
+  }
+
   async createUser(data: Prisma.UserCreateInput): Promise<User> {
     return this.prismaService.user.create({ data });
   }
