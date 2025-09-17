@@ -9,9 +9,9 @@ export interface ResponseUserDto {
   status: UserStatus;
   activation_code: string | null;
   activationExpiresAt: Date | null;
-  fullName?: string | null;
-  phoneNumber?: string | null;
-  avatar?: string | null;
+  fullName: string | null;
+  phone: string | null;
+  avatar: string | null;
   createdAt: Date;
   updatedAt: Date;
 }

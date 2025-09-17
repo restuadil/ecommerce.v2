@@ -26,6 +26,10 @@ export class UsersService {
     return this.usersRepository.findOneByActivationCode(activationCode);
   }
 
+  async findOneById(id: string): Promise<ResponseUserDto | null> {
+    return this.usersRepository.findOneById(id);
+  }
+
   async updateUserById(id: string, updateUserDto: UpdateUserDto): Promise<ResponseUserDto> {
     return this.usersRepository.updateUserById(id, updateUserDto);
   }

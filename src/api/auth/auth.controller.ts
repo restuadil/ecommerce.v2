@@ -14,8 +14,10 @@ import { Response } from "express";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
 
+import { Me } from "src/common/decortators/me.decorator";
 import { Public } from "src/common/decortators/public.decorator";
 import { ZodPipe } from "src/common/pipe/zod.pipe";
+import { UserPayload } from "src/types/jwt.type";
 import { ControllerResponse } from "src/types/web.type";
 
 import { AuthService } from "./auth.service";
@@ -23,7 +25,7 @@ import { ActivationDto, activationSchema } from "./dto/activation-auth.dto";
 import { LoginDto, loginSchema } from "./dto/login-auth.dto";
 import { RegisterCustomerDto, registerCustomerSchema } from "./dto/register-customer.dto";
 import { RegisterStoreAdminDto, registerStoreAdminSchema } from "./dto/register-store-admin.dto";
-import { LoginResponseDto, RegisterResponseDto } from "./dto/response-auth.dt";
+import { LoginResponseDto, MeResponseDto, RegisterResponseDto } from "./dto/response-auth.dt";
 
 @Controller("auth")
 export class AuthController {
@@ -89,6 +91,16 @@ export class AuthController {
     const result = await this.authService.activate(activationDto);
     return {
       message: "User activated successfully",
+      data: result,
+    };
+  }
+
+  @Get("me")
+  @HttpCode(HttpStatus.OK)
+  async me(@Me() me: UserPayload): Promise<ControllerResponse<MeResponseDto>> {
+    const result = await this.authService.me(me);
+    return {
+      message: "User profile fetched successfully",
       data: result,
     };
   }
