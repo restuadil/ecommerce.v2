@@ -1,8 +1,10 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from "@nestjs/common";
 
 import { UserRole } from "@prisma/client";
 
+import { Public } from "src/common/decortators/public.decorator";
 import { Roles } from "src/common/decortators/roles.decorator";
+import { idSchema } from "src/common/helpers/id.dto";
 import { ZodPipe } from "src/common/pipe/zod.pipe";
 import { ControllerResponse } from "src/types/web.type";
 
@@ -23,6 +25,19 @@ export class BrandsController {
     const result = await this.brandsService.create(createBrandDto);
     return {
       message: "Brand created successfully",
+      data: result,
+    };
+  }
+
+  @Get(":id")
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  async findOne(
+    @Param("id", new ZodPipe(idSchema)) id: string,
+  ): Promise<ControllerResponse<ResponseBrandDto>> {
+    const result = await this.brandsService.findOneById(id);
+    return {
+      message: "Brands retrieved successfully",
       data: result,
     };
   }

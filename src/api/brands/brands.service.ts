@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable } from "@nestjs/common";
+import { ConflictException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
@@ -29,6 +29,12 @@ export class BrandsService {
 
     await this.redisService.deleteByPattern("brands*");
 
+    return brand;
+  }
+
+  async findOneById(id: string): Promise<ResponseBrandDto> {
+    const brand = await this.brandsRepository.findOneById(id);
+    if (!brand) throw new NotFoundException("Brand not found");
     return brand;
   }
 }

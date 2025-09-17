@@ -15,4 +15,8 @@ export class BrandsRepository {
   async findOneByName(name: string): Promise<Brand | null> {
     return this.prismaService.brand.findUnique({ where: { name } });
   }
+
+  async findOneById(id: string): Promise<Brand | null> {
+    return this.prismaService.brand.findUnique({ where: { id } });
+  }
 }
