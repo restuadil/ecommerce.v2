@@ -11,6 +11,7 @@ import { CategoriesRepository } from "./categories.repository";
 import { CreateCategoryDto } from "./dto/create-category.dto";
 import { QueryCategoryDto } from "./dto/query-category.dto";
 import { ResponseCategoryDto } from "./dto/response-category.dto";
+import { UpdateCategoryDto } from "./dto/update-category.dto";
 
 @Injectable()
 export class CategoriesService {
@@ -61,7 +62,7 @@ export class CategoriesService {
 
     const { page, limit } = queryCategoryDto;
 
-    const cacheKey = `categoris:${JSON.stringify(queryCategoryDto)}`;
+    const cacheKey = `categories:${JSON.stringify(queryCategoryDto)}`;
     const cached = await this.redisService.get<PaginationResponse<ResponseCategoryDto>>(cacheKey);
     if (cached) return cached;
 
@@ -74,5 +75,24 @@ export class CategoriesService {
 
     await this.redisService.set(cacheKey, { data, meta });
     return { data, meta };
+  }
+
+  async update(id: string, updateCategoryDto: UpdateCategoryDto): Promise<ResponseCategoryDto> {
+    this.logger.info(`Update category id: ${id}`);
+
+    const category = await this.findOneById(id);
+
+    const { name, slug } = updateCategoryDto;
+
+    const existing = await this.categoriesRepository.findOneByNameOrSlug(
+      name ?? category.name,
+      slug ?? category.slug,
+    );
+    if (existing && existing.id !== id) throw new ConflictException("Category already exists");
+    const updated = await this.categoriesRepository.update(id, { name, slug });
+
+    await this.redisService.deleteByPattern("categories*");
+
+    return updated;
   }
 }

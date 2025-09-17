@@ -7,6 +7,7 @@ import {
   Inject,
   Param,
   Post,
+  Put,
   Query,
 } from "@nestjs/common";
 
@@ -24,6 +25,7 @@ import { CategoriesService } from "./categories.service";
 import { CreateCategoryDto, createCategorySchema } from "./dto/create-category.dto";
 import { QueryCategoryDto, queryCategorySchema } from "./dto/query-category.dto";
 import { ResponseCategoryDto } from "./dto/response-category.dto";
+import { UpdateCategoryDto, updateCategorySchema } from "./dto/update-category.dto";
 
 @Controller("categories")
 export class CategoriesController {
@@ -73,6 +75,21 @@ export class CategoriesController {
       message: "Categories fetched successfully",
       data,
       meta,
+    };
+  }
+
+  @Put(":id")
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.SUPER_ADMIN)
+  async update(
+    @Param("id", new ZodPipe(idSchema)) id: string,
+    @Body(new ZodPipe(updateCategorySchema)) updateCategoryDto: UpdateCategoryDto,
+  ): Promise<ControllerResponse<ResponseCategoryDto>> {
+    this.logger.info(`CategoyController - Update: ${id}`);
+    const category = await this.categoriesService.update(id, updateCategoryDto);
+    return {
+      message: "Category updated successfully",
+      data: category,
     };
   }
 }

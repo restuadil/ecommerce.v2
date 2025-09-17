@@ -69,4 +69,11 @@ export class CategoriesRepository {
         : undefined,
     });
   }
+
+  update(id: string, data: Prisma.CategoryUpdateInput): Promise<Category> {
+    return this.prismaService.category.update({
+      where: { id },
+      data,
+    });
+  }
 }
