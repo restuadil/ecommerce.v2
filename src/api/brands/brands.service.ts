@@ -11,6 +11,7 @@ import { BrandsRepository } from "./brands.repository";
 import { CreateBrandDto } from "./dto/create-brand.dto";
 import { QueryBrandDto } from "./dto/query-brand.dto";
 import { ResponseBrandDto } from "./dto/response-brand.dto";
+import { UpdateBrandDto } from "./dto/update-brand.dto";
 
 @Injectable()
 export class BrandsService {
@@ -60,5 +61,22 @@ export class BrandsService {
     await this.redisService.set(cacheKey, { data, meta });
 
     return { data, meta };
+  }
+
+  async update(id: string, updateBrandDto: UpdateBrandDto): Promise<ResponseBrandDto> {
+    this.logger.info(`Updating brand with id: ${id}`);
+    const { name } = updateBrandDto;
+
+    const brand = await this.findOneById(id);
+
+    const existing = await this.brandsRepository.findOneByName(name ?? brand.name);
+    if (existing && existing.id !== id)
+      throw new ConflictException("Brand with this name already exists");
+
+    const updated = await this.brandsRepository.update(id, updateBrandDto);
+
+    await this.redisService.deleteByPattern("brands*");
+
+    return updated;
   }
 }

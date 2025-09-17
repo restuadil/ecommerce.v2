@@ -45,4 +45,11 @@ export class BrandsRepository {
         : undefined,
     });
   }
+
+  async update(id: string, data: Prisma.BrandUpdateInput): Promise<Brand> {
+    return await this.prismaService.brand.update({
+      where: { id },
+      data,
+    });
+  }
 }
