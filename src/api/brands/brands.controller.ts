@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query } from "@nestjs/common";
 
 import { UserRole } from "@prisma/client";
 
@@ -10,6 +10,7 @@ import { ControllerResponse } from "src/types/web.type";
 
 import { BrandsService } from "./brands.service";
 import { CreateBrandDto, createBrandSchema } from "./dto/create-brand.dto";
+import { QueryBrandDto, queryBrandSchema } from "./dto/query-brand.dto";
 import { ResponseBrandDto } from "./dto/response-brand.dto";
 
 @Controller("brands")
@@ -39,6 +40,20 @@ export class BrandsController {
     return {
       message: "Brands retrieved successfully",
       data: result,
+    };
+  }
+
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  async findAll(
+    @Query(new ZodPipe(queryBrandSchema)) queryBrandDto: QueryBrandDto,
+  ): Promise<ControllerResponse<ResponseBrandDto[]>> {
+    const { data, meta } = await this.brandsService.findAll(queryBrandDto);
+    return {
+      message: "Brands retrieved successfully",
+      data,
+      meta,
     };
   }
 }
