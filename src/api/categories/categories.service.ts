@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable } from "@nestjs/common";
+import { ConflictException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
@@ -28,6 +28,15 @@ export class CategoriesService {
     const category = await this.categoriesRepository.create({ name, slug });
 
     await this.redisService.deleteByPattern("categories*");
+
+    return category;
+  }
+
+  async findOneById(id: string): Promise<ResponseCategoryDto> {
+    this.logger.info(`Finding category by id: ${id}`);
+
+    const category = await this.categoriesRepository.findOneById(id);
+    if (!category) throw new NotFoundException("Category not found");
 
     return category;
   }

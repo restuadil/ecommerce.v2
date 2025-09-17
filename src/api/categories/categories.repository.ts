@@ -21,4 +21,10 @@ export class CategoriesRepository {
       },
     });
   }
+
+  async findOneById(id: string): Promise<Category | null> {
+    return this.prismaService.category.findUnique({
+      where: { id },
+    });
+  }
 }
