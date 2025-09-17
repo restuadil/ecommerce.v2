@@ -27,4 +27,14 @@ export class CategoriesRepository {
       where: { id },
     });
   }
+
+  async findManyByIds(ids: string[]): Promise<Category[]> {
+    return this.prismaService.category.findMany({
+      where: {
+        id: {
+          in: ids,
+        },
+      },
+    });
+  }
 }

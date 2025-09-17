@@ -40,4 +40,14 @@ export class CategoriesService {
 
     return category;
   }
+
+  async findManyByIds(ids: string[]): Promise<ResponseCategoryDto[]> {
+    this.logger.info(`Finding categories by ids: ${ids.join(", ")}`);
+
+    const categories = await this.categoriesRepository.findManyByIds(ids);
+    if (!categories || categories.length !== ids.length)
+      throw new NotFoundException("Some categories not found");
+
+    return categories;
+  }
 }
