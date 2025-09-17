@@ -1,13 +1,17 @@
-import { ConflictException, Inject, Injectable } from "@nestjs/common";
+import { ConflictException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
 
+import { generateMeta } from "src/common/helpers/generate-meta";
 import { RedisService } from "src/common/redis/redis.service";
+import { Meta, PaginationResponse } from "src/types/web.type";
 
 import { CategoriesRepository } from "./categories.repository";
 import { CreateCategoryDto } from "./dto/create-category.dto";
+import { QueryCategoryDto } from "./dto/query-category.dto";
 import { ResponseCategoryDto } from "./dto/response-category.dto";
+import { UpdateCategoryDto } from "./dto/update-category.dto";
 
 @Injectable()
 export class CategoriesService {
@@ -30,5 +34,75 @@ export class CategoriesService {
     await this.redisService.deleteByPattern("categories*");
 
     return category;
+  }
+
+  async findOneById(id: string): Promise<ResponseCategoryDto> {
+    this.logger.info(`Finding category by id: ${id}`);
+
+    const category = await this.categoriesRepository.findOneById(id);
+    if (!category) throw new NotFoundException("Category not found");
+
+    return category;
+  }
+
+  async findManyByIds(ids: string[]): Promise<ResponseCategoryDto[]> {
+    this.logger.info(`Finding categories by ids: ${ids.join(", ")}`);
+
+    const categories = await this.categoriesRepository.findManyByIds(ids);
+    if (!categories || categories.length !== ids.length)
+      throw new NotFoundException("Some categories not found");
+
+    return categories;
+  }
+
+  async findAll(
+    queryCategoryDto: QueryCategoryDto,
+  ): Promise<PaginationResponse<ResponseCategoryDto>> {
+    this.logger.info(`Finding all categories with query: ${JSON.stringify(queryCategoryDto)}`);
+
+    const { page, limit } = queryCategoryDto;
+
+    const cacheKey = `categories:${JSON.stringify(queryCategoryDto)}`;
+    const cached = await this.redisService.get<PaginationResponse<ResponseCategoryDto>>(cacheKey);
+    if (cached) return cached;
+
+    const [data, total] = await Promise.all([
+      this.categoriesRepository.findAll(queryCategoryDto),
+      this.categoriesRepository.count(queryCategoryDto),
+    ]);
+
+    const meta: Meta = generateMeta(page, limit, total);
+
+    await this.redisService.set(cacheKey, { data, meta });
+    return { data, meta };
+  }
+
+  async update(id: string, updateCategoryDto: UpdateCategoryDto): Promise<ResponseCategoryDto> {
+    this.logger.info(`Update category id: ${id}`);
+
+    const category = await this.findOneById(id);
+
+    const { name, slug } = updateCategoryDto;
+
+    const existing = await this.categoriesRepository.findOneByNameOrSlug(
+      name ?? category.name,
+      slug ?? category.slug,
+    );
+    if (existing && existing.id !== id) throw new ConflictException("Category already exists");
+    const updated = await this.categoriesRepository.update(id, { name, slug });
+
+    await this.redisService.deleteByPattern("categories*");
+
+    return updated;
+  }
+
+  async delete(id: string): Promise<void> {
+    this.logger.info(`Delete category id: ${id}`);
+
+    await this.findOneById(id);
+
+    await this.categoriesRepository.delete(id);
+
+    await this.redisService.deleteByPattern("categories*");
   }
 }
