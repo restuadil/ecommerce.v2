@@ -25,6 +25,7 @@ import { ActivationDto, activationSchema } from "./dto/activation-auth.dto";
 import { LoginDto, loginSchema } from "./dto/login-auth.dto";
 import { RegisterCustomerDto, registerCustomerSchema } from "./dto/register-customer.dto";
 import { RegisterStoreAdminDto, registerStoreAdminSchema } from "./dto/register-store-admin.dto";
+import { ResendActivationDto, resendActivationSchema } from "./dto/resend-activation.auth.dto";
 import { LoginResponseDto, MeResponseDto, RegisterResponseDto } from "./dto/response-auth.dt";
 
 @Controller("auth")
@@ -101,6 +102,19 @@ export class AuthController {
     const result = await this.authService.me(me);
     return {
       message: "User profile fetched successfully",
+      data: result,
+    };
+  }
+
+  @Post("resend-activation")
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  async resendActivation(
+    @Body(new ZodPipe(resendActivationSchema)) resendActivationDto: ResendActivationDto,
+  ): Promise<ControllerResponse<RegisterResponseDto>> {
+    const result = await this.authService.resendActivation(resendActivationDto);
+    return {
+      message: "Activation email resent successfully",
       data: result,
     };
   }

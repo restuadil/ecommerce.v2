@@ -32,6 +32,7 @@ import {
 } from "./dto/response-auth.dt";
 import { UsersService } from "../users/users.service";
 import { ActivationDto } from "./dto/activation-auth.dto";
+import { ResendActivationDto } from "./dto/resend-activation.auth.dto";
 @Injectable()
 export class AuthService {
   constructor(
@@ -157,5 +158,38 @@ export class AuthService {
     const user = await this.usersService.findOneById(me.id);
     if (!user) throw new NotFoundException("User not found");
     return toMeResponseDto(user);
+  }
+
+  async resendActivation(resendActivationDto: ResendActivationDto): Promise<RegisterResponseDto> {
+    this.logger.info(`Resending activation email to: ${resendActivationDto.email}`);
+    const user = await this.usersService.findOneByEmailOrUsername(
+      resendActivationDto.email,
+      resendActivationDto.email,
+    );
+    if (!user) throw new NotFoundException("User not found");
+    if (user.status === UserStatus.ACTIVE) throw new BadRequestException("User is already active");
+    const activation_code = randomBytes(32).toString("hex");
+    const activationExpiresAt = new Date(
+      Date.now() + (this.configService.get<number>("ACTIVATION_EXPIRATION_TIME") ?? 900000),
+    );
+
+    await this.usersService.updateUserById(user.id, {
+      activation_code,
+      activationExpiresAt,
+    });
+
+    await this.mailService.sendMail({
+      to: user.email,
+      subject: "Activate your account",
+      html: `<h1>Activate your account</h1>
+      <p>Please click the link below to activate your account:</p>
+      <a href="${this.configService.get<string>(
+        "CLIENT_HOST",
+      )}/activate/?activation_code=${activation_code}">Activate Account</a>
+      <p>This link will expire in 15 minutes.</p>
+      <p>Thank you!</p>`,
+    });
+
+    return toRegisterResponseDto(user);
   }
 }
