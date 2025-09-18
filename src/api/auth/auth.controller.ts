@@ -23,8 +23,8 @@ import { ControllerResponse } from "src/types/web.type";
 
 import { AuthService } from "./auth.service";
 import { ActivationDto, activationSchema } from "./dto/activation-auth.dto";
+import { CookieDto, cookieSchema } from "./dto/cookie.auth";
 import { LoginDto, loginSchema } from "./dto/login-auth.dto";
-import { RefreshCookieDto, refreshCookieSchema } from "./dto/refresh-cookie.auth";
 import { RegisterCustomerDto, registerCustomerSchema } from "./dto/register-customer.dto";
 import { RegisterStoreAdminDto, registerStoreAdminSchema } from "./dto/register-store-admin.dto";
 import { ResendActivationDto, resendActivationSchema } from "./dto/resend-activation.auth.dto";
@@ -124,12 +124,12 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Public()
   async refreshToken(
-    @Cookie(new ZodPipe(refreshCookieSchema)) refreshCookieDto: RefreshCookieDto,
+    @Cookie("refreshToken", new ZodPipe(cookieSchema)) cookieDto: CookieDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<ControllerResponse<LoginResponseDto>> {
     this.logger.info(`AuthController - refreshToken`);
 
-    const { accessToken, refreshToken } = await this.authService.refreshToken(refreshCookieDto);
+    const { accessToken, refreshToken } = await this.authService.refreshToken(cookieDto);
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
