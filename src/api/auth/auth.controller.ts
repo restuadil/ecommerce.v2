@@ -14,6 +14,7 @@ import { Response } from "express";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
 
+import { Cookie } from "src/common/decortators/cookie.decorator";
 import { Me } from "src/common/decortators/me.decorator";
 import { Public } from "src/common/decortators/public.decorator";
 import { ZodPipe } from "src/common/pipe/zod.pipe";
@@ -23,6 +24,7 @@ import { ControllerResponse } from "src/types/web.type";
 import { AuthService } from "./auth.service";
 import { ActivationDto, activationSchema } from "./dto/activation-auth.dto";
 import { LoginDto, loginSchema } from "./dto/login-auth.dto";
+import { RefreshCookieDto, refreshCookieSchema } from "./dto/refresh-cookie.auth";
 import { RegisterCustomerDto, registerCustomerSchema } from "./dto/register-customer.dto";
 import { RegisterStoreAdminDto, registerStoreAdminSchema } from "./dto/register-store-admin.dto";
 import { ResendActivationDto, resendActivationSchema } from "./dto/resend-activation.auth.dto";
@@ -116,6 +118,28 @@ export class AuthController {
     return {
       message: "Activation email resent successfully",
       data: result,
+    };
+  }
+  @Get("refresh-token")
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  async refreshToken(
+    @Cookie(new ZodPipe(refreshCookieSchema)) refreshCookieDto: RefreshCookieDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<ControllerResponse<LoginResponseDto>> {
+    this.logger.info(`AuthController - refreshToken`);
+
+    const { accessToken, refreshToken } = await this.authService.refreshToken(refreshCookieDto);
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
+
+    return {
+      message: "Token refreshed successfully",
+      data: { accessToken },
     };
   }
 }

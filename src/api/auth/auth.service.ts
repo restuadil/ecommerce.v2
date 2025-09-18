@@ -21,6 +21,7 @@ import { ConfigService } from "src/config/config.service";
 import { UserPayload } from "src/types/jwt.type";
 
 import { LoginDto } from "./dto/login-auth.dto";
+import { RefreshCookieDto } from "./dto/refresh-cookie.auth";
 import { RegisterCustomerDto } from "./dto/register-customer.dto";
 import { RegisterStoreAdminDto } from "./dto/register-store-admin.dto";
 import {
@@ -191,5 +192,31 @@ export class AuthService {
     });
 
     return toRegisterResponseDto(user);
+  }
+
+  async refreshToken(refreshCookieDto: RefreshCookieDto): Promise<LoginResponseDto> {
+    this.logger.info(`Refreshing token`);
+
+    const { email, id, roles, username }: UserPayload = this.jwtService.verify(
+      refreshCookieDto.refreshToken,
+      {
+        secret: this.configService.get<string>("JWT_REFRESH_SECRET"),
+      },
+    );
+
+    const storedRefreshToken = await this.redisService.get<string>(`refreshToken:${id}`);
+    if (!storedRefreshToken || storedRefreshToken !== refreshCookieDto.refreshToken)
+      throw new BadRequestException("Invalid refresh token");
+
+    const payload: UserPayload = { id, username, email, roles };
+    const { accessToken, refreshToken } = this.generateTokens(payload);
+
+    await this.redisService.set(
+      `refreshToken:${id}`,
+      refreshToken,
+      this.configService.get<number>("REDIS_TTL"),
+    );
+
+    return { accessToken, refreshToken };
   }
 }
