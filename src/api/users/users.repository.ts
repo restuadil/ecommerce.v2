@@ -19,6 +19,23 @@ export class UsersRepository {
   async findOneById(id: string): Promise<User | null> {
     return this.prismaService.user.findUnique({
       where: { id },
+      include: {
+        Store: {
+          select: {
+            id: true,
+          },
+        },
+        Cart: {
+          select: {
+            id: true,
+          },
+        },
+        UserAddress: {
+          select: {
+            id: true,
+          },
+        },
+      },
     });
   }
 
