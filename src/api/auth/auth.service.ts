@@ -1,12 +1,6 @@
 import { randomBytes } from "crypto";
 
-import {
-  BadRequestException,
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, ConflictException, Inject, Injectable } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import { JwtService } from "@nestjs/jwt";
 
@@ -19,6 +13,7 @@ import { MailService } from "src/common/mail/mail.service";
 import { RedisService } from "src/common/redis/redis.service";
 import { ConfigService } from "src/config/config.service";
 import { UserPayload } from "src/types/jwt.type";
+import { deletePasswordUser, OmitPasswordUser } from "src/types/user.type";
 
 import { LoginDto } from "./dto/login-auth.dto";
 import { RegisterCustomerDto } from "./dto/register-customer.dto";
@@ -26,11 +21,9 @@ import { RegisterStoreAdminDto } from "./dto/register-store-admin.dto";
 import { ResendActivationDto } from "./dto/resend-activation.auth.dto";
 import {
   LoginResponseDto,
-  MeResponseDto,
   RegisterResponseDto,
-  toMeResponseDto,
   toRegisterResponseDto,
-} from "./dto/response-auth.dt";
+} from "./dto/response-auth.dto";
 import { UsersService } from "../users/users.service";
 import { ActivationDto } from "./dto/activation-auth.dto";
 @Injectable()
@@ -110,8 +103,7 @@ export class AuthService {
 
     const { identifier, password } = loginDto;
 
-    const user = await this.usersService.findOneByEmailOrUsername(identifier, identifier);
-    if (!user) throw new ConflictException("Invalid credentials");
+    const user = await this.usersService.getOneByEmailOrUsername(identifier, identifier);
     if (!this.compare(password, user.password)) throw new ConflictException("Invalid credentials");
     if (user && user.status !== UserStatus.ACTIVE)
       throw new ConflictException("Please activate your account to login");
@@ -138,8 +130,7 @@ export class AuthService {
     this.logger.info(`Activating user with activation code: ${activationDto.activation_code}`);
     const { activation_code } = activationDto;
 
-    const user = await this.usersService.findOneByActivationCode(activation_code);
-    if (!user) throw new BadRequestException("Invalid activation code");
+    const user = await this.usersService.getOneByActivationCode(activation_code);
     if (user.status === UserStatus.ACTIVE) throw new BadRequestException("User is already active");
     if (user.activationExpiresAt && user.activationExpiresAt < new Date())
       throw new ConflictException("Activation code has expired");
@@ -153,20 +144,18 @@ export class AuthService {
     return toRegisterResponseDto(updatedUser);
   }
 
-  async me(me: UserPayload): Promise<MeResponseDto> {
+  async me(me: UserPayload): Promise<OmitPasswordUser> {
     this.logger.info(`Fetching profile for user id: ${me.id}`);
-    const user = await this.usersService.findOneById(me.id);
-    if (!user) throw new NotFoundException("User not found");
-    return toMeResponseDto(user);
+    const user = await this.usersService.getOneById(me.id);
+    return deletePasswordUser(user);
   }
 
   async resendActivation(resendActivationDto: ResendActivationDto): Promise<RegisterResponseDto> {
     this.logger.info(`Resending activation email to: ${resendActivationDto.email}`);
-    const user = await this.usersService.findOneByEmailOrUsername(
+    const user = await this.usersService.getOneByEmailOrUsername(
       resendActivationDto.email,
       resendActivationDto.email,
     );
-    if (!user) throw new NotFoundException("User not found");
     if (user.status === UserStatus.ACTIVE) throw new BadRequestException("User is already active");
     const activation_code = randomBytes(32).toString("hex");
     const activationExpiresAt = new Date(

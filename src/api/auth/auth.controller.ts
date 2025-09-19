@@ -19,16 +19,17 @@ import { Me } from "src/common/decortators/me.decorator";
 import { Public } from "src/common/decortators/public.decorator";
 import { ZodPipe } from "src/common/pipe/zod.pipe";
 import { UserPayload } from "src/types/jwt.type";
+import { OmitPasswordUser } from "src/types/user.type";
 import { ControllerResponse } from "src/types/web.type";
 
 import { AuthService } from "./auth.service";
 import { ActivationDto, activationSchema } from "./dto/activation-auth.dto";
-import { CookieDto, cookieSchema } from "./dto/cookie.auth";
+import { CookieDto, cookieSchema } from "./dto/cookie.auth.dto";
 import { LoginDto, loginSchema } from "./dto/login-auth.dto";
 import { RegisterCustomerDto, registerCustomerSchema } from "./dto/register-customer.dto";
 import { RegisterStoreAdminDto, registerStoreAdminSchema } from "./dto/register-store-admin.dto";
 import { ResendActivationDto, resendActivationSchema } from "./dto/resend-activation.auth.dto";
-import { LoginResponseDto, MeResponseDto, RegisterResponseDto } from "./dto/response-auth.dt";
+import { LoginResponseDto, RegisterResponseDto } from "./dto/response-auth.dto";
 
 @Controller("auth")
 export class AuthController {
@@ -100,7 +101,7 @@ export class AuthController {
 
   @Get("me")
   @HttpCode(HttpStatus.OK)
-  async me(@Me() me: UserPayload): Promise<ControllerResponse<MeResponseDto>> {
+  async me(@Me() me: UserPayload): Promise<ControllerResponse<OmitPasswordUser>> {
     const result = await this.authService.me(me);
     return {
       message: "User profile fetched successfully",
