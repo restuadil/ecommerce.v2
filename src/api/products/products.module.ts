@@ -3,9 +3,12 @@ import { Module } from "@nestjs/common";
 import { ProductsController } from "./products.controller";
 import { ProductsRepository } from "./products.repository";
 import { ProductsService } from "./products.service";
+import { BrandsModule } from "../brands/brands.module";
+import { CategoriesModule } from "../categories/categories.module";
+import { UsersModule } from "../users/users.module";
 
 @Module({
-  imports: [],
+  imports: [BrandsModule, CategoriesModule, UsersModule],
   controllers: [ProductsController],
   providers: [ProductsService, ProductsRepository],
   exports: [ProductsService],
