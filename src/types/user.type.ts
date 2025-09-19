@@ -1,4 +1,4 @@
-import { UserRole, UserStatus } from "@prisma/client";
+import { User, UserRole, UserStatus } from "@prisma/client";
 
 export interface ResponseUserDto {
   id: string;
@@ -15,3 +15,9 @@ export interface ResponseUserDto {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export type OmitPasswordUser = Omit<ResponseUserDto, "password">;
+export const deletePasswordUser = (user: User): Omit<ResponseUserDto, "password"> => {
+  const { password: _, ...rest } = user;
+  return rest;
+};
