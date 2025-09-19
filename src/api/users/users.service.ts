@@ -77,4 +77,8 @@ export class UsersService {
       meta,
     };
   }
+
+  async count(queryUserDto: QueryUserDto): Promise<number> {
+    return this.usersRepository.count(queryUserDto);
+  }
 }
