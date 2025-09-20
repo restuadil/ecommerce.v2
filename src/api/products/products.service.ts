@@ -1,14 +1,17 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { ConflictException, Inject, Injectable } from "@nestjs/common";
 
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
 
 import { RedisService } from "src/common/redis/redis.service";
+import { UserPayload } from "src/types/jwt.type";
 
 import { ProductsRepository } from "./products.repository";
 import { BrandsService } from "../brands/brands.service";
 import { CategoriesService } from "../categories/categories.service";
-import { UsersService } from "../users/users.service";
+import { CreateProductDto } from "./dto/create-product.dto";
+import { ResponseProductDto } from "./dto/response-product.dto";
+import { StoresService } from "../stores/stores.service";
 
 @Injectable()
 export class ProductsService {
@@ -18,8 +21,26 @@ export class ProductsService {
     private readonly redisService: RedisService,
     private readonly brandsService: BrandsService,
     private readonly categoriesService: CategoriesService,
-    private readonly usersService: UsersService,
+    private readonly storesService: StoresService,
   ) {}
 
-  async create() {}
+  async create(me: UserPayload, createProducDto: CreateProductDto): Promise<ResponseProductDto> {
+    this.logger.info(`Creating new product with name: ${createProducDto.name}`);
+
+    const { brandId, categoryIds, name, slug } = createProducDto;
+    const { id } = me;
+    await this.brandsService.findOneById(brandId);
+    await this.categoriesService.findManyByIds(categoryIds);
+    const store = await this.storesService.getStoreByStoreAmdinId(id);
+    const existing = await this.productsRepository.findOneByNameOrSlugInStore(store.id, name, slug);
+    if (existing) throw new ConflictException("Product already exists");
+
+    const product = await this.productsRepository.create(store.id, {
+      ...createProducDto,
+    });
+
+    await this.redisService.deleteByPattern("products*");
+
+    return product;
+  }
 }

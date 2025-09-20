@@ -6,7 +6,7 @@ export class ResponseProductDto {
   name: string;
   slug: string;
   description: string | null;
-  basePrice: number | null;
+  price: number;
   images: string[];
   brandId: string;
   categoryIds?: string[];
@@ -22,7 +22,7 @@ export const toResponseProductDto = (product: ResponseProductDto): ResponseProdu
     name: product.name,
     slug: product.slug,
     description: product.description || null,
-    basePrice: product.basePrice || 0,
+    price: product.price,
     images: product.images,
     brandId: product.brandId,
     categoryIds: product.categoryIds || [],
