@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable } from "@nestjs/common";
+import { ConflictException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
@@ -10,7 +10,7 @@ import { ProductsRepository } from "./products.repository";
 import { BrandsService } from "../brands/brands.service";
 import { CategoriesService } from "../categories/categories.service";
 import { CreateProductDto } from "./dto/create-product.dto";
-import { ResponseProductDto } from "./dto/response-product.dto";
+import { ResponseProductDto, toResponseProductDto } from "./dto/response-product.dto";
 import { StoresService } from "../stores/stores.service";
 
 @Injectable()
@@ -42,5 +42,11 @@ export class ProductsService {
     await this.redisService.deleteByPattern("products*");
 
     return product;
+  }
+
+  async getOneById(id: string): Promise<ResponseProductDto> {
+    const result = await this.productsRepository.findOneById(id);
+    if (!result) throw new NotFoundException("Product not found");
+    return toResponseProductDto(result);
   }
 }

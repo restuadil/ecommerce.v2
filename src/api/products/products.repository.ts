@@ -49,4 +49,17 @@ export class ProductsRepository {
       return product;
     });
   }
+
+  async findOneById(id: string): Promise<Product | null> {
+    return this.prismaService.product.findUnique({
+      where: { id },
+      include: {
+        ProductCategory: {
+          select: {
+            categoryId: true,
+          },
+        },
+      },
+    });
+  }
 }

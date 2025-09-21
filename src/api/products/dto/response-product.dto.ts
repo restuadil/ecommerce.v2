@@ -1,6 +1,6 @@
 // ! TODO: add more fields later and relations
-
-export class ResponseProductDto {
+import { ProductWithRelations } from "src/types/product.type";
+export interface ResponseProductDto {
   id: string;
   storeId: string;
   name: string;
@@ -15,7 +15,7 @@ export class ResponseProductDto {
   updatedAt?: Date;
 }
 
-export const toResponseProductDto = (product: ResponseProductDto): ResponseProductDto => {
+export const toResponseProductDto = (product: ProductWithRelations): ResponseProductDto => {
   return {
     id: product.id,
     storeId: product.storeId,
@@ -25,9 +25,9 @@ export const toResponseProductDto = (product: ResponseProductDto): ResponseProdu
     price: product.price,
     images: product.images,
     brandId: product.brandId,
-    categoryIds: product.categoryIds || [],
     status: product.status,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
+    categoryIds: product.ProductCategory?.map((c) => c.categoryId) || [],
   };
 };
