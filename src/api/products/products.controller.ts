@@ -1,4 +1,14 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Inject, Param, Post } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Param,
+  Post,
+  Query,
+} from "@nestjs/common";
 
 import { UserRole } from "@prisma/client";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
@@ -13,6 +23,7 @@ import { UserPayload } from "src/types/jwt.type";
 import { ControllerResponse } from "src/types/web.type";
 
 import { CreateProductDto, createProductSchema } from "./dto/create-product.dto";
+import { QueryProductDto, queryProductSchema } from "./dto/query.product.dto";
 import { ResponseProductDto } from "./dto/response-product.dto";
 import { ProductsService } from "./products.service";
 
@@ -49,6 +60,21 @@ export class ProductsController {
     return {
       message: "Product fetched successfully",
       data: result,
+    };
+  }
+
+  @Get()
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  async getAll(
+    @Query(new ZodPipe(queryProductSchema)) queryProductDto: QueryProductDto,
+  ): Promise<ControllerResponse<ResponseProductDto[]>> {
+    this.logger.info(`ProductsController - GetAll`);
+    const { data, meta } = await this.productsService.getAllProducts(queryProductDto);
+    return {
+      message: "Products fetched successfully",
+      data,
+      meta,
     };
   }
 }

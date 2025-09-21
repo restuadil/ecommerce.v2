@@ -5,6 +5,7 @@ import { Product } from "@prisma/client";
 import { PrismaService } from "src/common/prisma/prisma.service";
 
 import { CreateProductDto } from "./dto/create-product.dto";
+import { QueryProductDto } from "./dto/query.product.dto";
 
 @Injectable()
 export class ProductsRepository {
@@ -59,6 +60,82 @@ export class ProductsRepository {
             categoryId: true,
           },
         },
+      },
+    });
+  }
+
+  async findAll(options: QueryProductDto): Promise<Product[]> {
+    const {
+      limit,
+      order,
+      page,
+      search,
+      sort,
+      status,
+      storeId,
+      maxPrice,
+      minPrice,
+      brandId,
+      categoryIds,
+    } = options;
+
+    return this.prismaService.product.findMany({
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: {
+        [sort]: order,
+      },
+      include: {
+        ProductCategory: {
+          select: {
+            categoryId: true,
+          },
+        },
+      },
+      where: {
+        storeId: storeId ?? undefined,
+        status: status ?? undefined,
+        brandId: brandId ?? undefined,
+        ...(minPrice || maxPrice
+          ? { price: { gte: minPrice ?? undefined, lte: maxPrice ?? undefined } }
+          : {}),
+        ...(search
+          ? {
+              OR: [
+                { name: { contains: search, mode: "insensitive" } },
+                { slug: { contains: search, mode: "insensitive" } },
+              ],
+            }
+          : {}),
+        ...(categoryIds && categoryIds.length > 0
+          ? { AND: categoryIds.map((id) => ({ ProductCategory: { some: { categoryId: id } } })) }
+          : {}),
+      },
+    });
+  }
+
+  async count(options: QueryProductDto): Promise<number> {
+    const { search, status, storeId, maxPrice, minPrice, brandId, categoryIds } = options;
+    return this.prismaService.product.count({
+      where: {
+        storeId: storeId ?? undefined,
+        status: status ?? undefined,
+        brandId: brandId ?? undefined,
+        price: {
+          gte: minPrice ?? undefined,
+          lte: maxPrice ?? undefined,
+        },
+        ...(search
+          ? {
+              OR: [
+                { name: { contains: search, mode: "insensitive" } },
+                { slug: { contains: search, mode: "insensitive" } },
+              ],
+            }
+          : {}),
+        ...(categoryIds && categoryIds.length > 0
+          ? { AND: categoryIds.map((id) => ({ ProductCategory: { some: { categoryId: id } } })) }
+          : {}),
       },
     });
   }

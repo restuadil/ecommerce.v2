@@ -3,8 +3,10 @@ import { ConflictException, Inject, Injectable, NotFoundException } from "@nestj
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
 
+import { generateMeta } from "src/common/helpers/generate-meta";
 import { RedisService } from "src/common/redis/redis.service";
 import { UserPayload } from "src/types/jwt.type";
+import { Meta, PaginationResponse } from "src/types/web.type";
 
 import { ProductsRepository } from "./products.repository";
 import { BrandsService } from "../brands/brands.service";
@@ -12,6 +14,7 @@ import { CategoriesService } from "../categories/categories.service";
 import { CreateProductDto } from "./dto/create-product.dto";
 import { ResponseProductDto, toResponseProductDto } from "./dto/response-product.dto";
 import { StoresService } from "../stores/stores.service";
+import { QueryProductDto } from "./dto/query.product.dto";
 
 @Injectable()
 export class ProductsService {
@@ -48,5 +51,30 @@ export class ProductsService {
     const result = await this.productsRepository.findOneById(id);
     if (!result) throw new NotFoundException("Product not found");
     return toResponseProductDto(result);
+  }
+
+  async getAllProducts(
+    queryProductDto: QueryProductDto,
+  ): Promise<PaginationResponse<ResponseProductDto>> {
+    this.logger.info(`Getting all products`);
+    const { page, limit } = queryProductDto;
+
+    const cacheKey = `products:${JSON.stringify(queryProductDto)}`;
+    const cached = await this.redisService.get<PaginationResponse<ResponseProductDto>>(cacheKey);
+    if (cached) return cached;
+
+    const [data, total] = await Promise.all([
+      this.productsRepository.findAll(queryProductDto),
+      this.productsRepository.count(queryProductDto),
+    ]);
+
+    const meta: Meta = generateMeta(page, limit, total);
+
+    await this.redisService.set(cacheKey, { data, meta });
+
+    return {
+      data: data.map((product) => toResponseProductDto(product)),
+      meta,
+    };
   }
 }
