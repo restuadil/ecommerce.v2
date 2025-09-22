@@ -15,6 +15,7 @@ import { CreateProductDto } from "./dto/create-product.dto";
 import { ResponseProductDto, toResponseProductDto } from "./dto/response-product.dto";
 import { StoresService } from "../stores/stores.service";
 import { QueryProductDto } from "./dto/query.product.dto";
+import { UpdateProductDto } from "./dto/update-product.dto";
 
 @Injectable()
 export class ProductsService {
@@ -76,5 +77,23 @@ export class ProductsService {
       data: data.map((product) => toResponseProductDto(product)),
       meta,
     };
+  }
+
+  async update(me: UserPayload, id: string, data: UpdateProductDto): Promise<ResponseProductDto> {
+    const store = await this.storesService.getStoreByStoreAmdinId(me.id);
+    const product = await this.productsRepository.findOneByIdAndStoreId(id, store.id);
+    if (!product) throw new NotFoundException("Product not found");
+
+    const existing = await this.productsRepository.findOneByNameOrSlugInStore(
+      store.id,
+      data.name ?? product.name,
+      data.slug ?? product.slug,
+    );
+    if (existing && existing.id !== id) throw new ConflictException("Product already exists");
+    const updated = await this.productsRepository.update(id, data);
+
+    await this.redisService.deleteByPattern("products*");
+
+    return toResponseProductDto(updated);
   }
 }

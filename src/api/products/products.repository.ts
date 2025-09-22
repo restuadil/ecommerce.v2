@@ -6,6 +6,7 @@ import { PrismaService } from "src/common/prisma/prisma.service";
 
 import { CreateProductDto } from "./dto/create-product.dto";
 import { QueryProductDto } from "./dto/query.product.dto";
+import { UpdateProductDto } from "./dto/update-product.dto";
 
 @Injectable()
 export class ProductsRepository {
@@ -137,6 +138,26 @@ export class ProductsRepository {
           ? { AND: categoryIds.map((id) => ({ ProductCategory: { some: { categoryId: id } } })) }
           : {}),
       },
+    });
+  }
+
+  async findOneByIdAndStoreId(id: string, storeId: string): Promise<Product | null> {
+    return this.prismaService.product.findFirst({
+      where: { id, storeId },
+    });
+  }
+
+  async update(id: string, data: UpdateProductDto): Promise<Product> {
+    return this.prismaService.product.update({
+      where: { id },
+      include: {
+        ProductCategory: {
+          select: {
+            categoryId: true,
+          },
+        },
+      },
+      data,
     });
   }
 }
