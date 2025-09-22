@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 
-import { Product } from "@prisma/client";
+import { Product, ProductStatus } from "@prisma/client";
 
 import { PrismaService } from "src/common/prisma/prisma.service";
 
@@ -95,7 +95,7 @@ export class ProductsRepository {
       },
       where: {
         storeId: storeId ?? undefined,
-        status: status ?? undefined,
+        status: (status as unknown as ProductStatus) ?? undefined,
         brandId: brandId ?? undefined,
         ...(minPrice || maxPrice
           ? { price: { gte: minPrice ?? undefined, lte: maxPrice ?? undefined } }
@@ -120,7 +120,7 @@ export class ProductsRepository {
     return this.prismaService.product.count({
       where: {
         storeId: storeId ?? undefined,
-        status: status ?? undefined,
+        status: (status as unknown as ProductStatus) ?? undefined,
         brandId: brandId ?? undefined,
         price: {
           gte: minPrice ?? undefined,

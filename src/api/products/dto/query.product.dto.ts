@@ -20,7 +20,7 @@ export const queryProductSchema = QuerySchema.extend({
   .strict()
   .transform((data) => ({
     ...data,
-    status: ProductStatus.ACTIVE,
+    status: z.enum(ProductStatus).optional().default(ProductStatus.ACTIVE),
   }));
 
 export type QueryProductDto = z.infer<typeof queryProductSchema>;
