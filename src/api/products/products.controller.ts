@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -93,6 +94,21 @@ export class ProductsController {
     return {
       message: "Product updated successfully",
       data: result,
+    };
+  }
+
+  @Delete(":id")
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.STORE_ADMIN)
+  async delete(
+    @Me() me: UserPayload,
+    @Param("id", new ZodPipe(idSchema)) id: string,
+  ): Promise<ControllerResponse<null>> {
+    this.logger.info(`ProductsController - Delete: ${id}`);
+    await this.productsService.delete(me, id);
+    return {
+      message: "Product deleted successfully",
+      data: null,
     };
   }
 }

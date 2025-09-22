@@ -160,4 +160,10 @@ export class ProductsRepository {
       data,
     });
   }
+
+  async delete(id: string): Promise<Product> {
+    return this.prismaService.product.delete({
+      where: { id },
+    });
+  }
 }

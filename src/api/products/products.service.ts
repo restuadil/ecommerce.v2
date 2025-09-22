@@ -96,4 +96,14 @@ export class ProductsService {
 
     return toResponseProductDto(updated);
   }
+
+  async delete(me: UserPayload, id: string): Promise<void> {
+    const store = await this.storesService.getStoreByStoreAmdinId(me.id);
+    const product = await this.productsRepository.findOneByIdAndStoreId(id, store.id);
+    if (!product) throw new NotFoundException("Product not found");
+
+    await this.productsRepository.delete(id);
+
+    await this.redisService.deleteByPattern("products*");
+  }
 }
