@@ -37,7 +37,7 @@ export class StoresController {
   async getStoreByStoreAmdinId(
     @Param("id", new ZodPipe(idSchema)) id: string,
   ): Promise<ControllerResponse<ResponseStoreDto>> {
-    const result = await this.storesService.getStoreByStoreAmdinId(id);
+    const result = await this.storesService.getStoreByStoreAdminId(id);
     return {
       message: "Store fetched successfully",
       data: result,

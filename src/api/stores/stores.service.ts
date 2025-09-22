@@ -17,16 +17,16 @@ export class StoresService {
   ) {}
 
   async findStoreByStoreAmdinId(storeAdminId: string): Promise<ResponseStoreDto | null> {
-    return await this.storesRepository.findStoreByStoreAmdinId(storeAdminId);
+    return await this.storesRepository.findStoreByStoreAdminId(storeAdminId);
   }
-  async getStoreByStoreAmdinId(storeAdminId: string): Promise<ResponseStoreDto> {
+  async getStoreByStoreAdminId(storeAdminId: string): Promise<ResponseStoreDto> {
     const store = await this.findStoreByStoreAmdinId(storeAdminId);
     if (!store) throw new NotFoundException("Store not found");
     return store;
   }
   async create(me: UserPayload, createStoreDto: CreateStoreDto): Promise<ResponseStoreDto> {
     const { name, status, description, domain, logo } = createStoreDto;
-    const existing = await this.storesRepository.findStoreByStoreAmdinId(me.id);
+    const existing = await this.storesRepository.findStoreByStoreAdminId(me.id);
     if (existing) throw new ConflictException("Store already exists");
     const store = await this.storesRepository.create(me.id, {
       name,

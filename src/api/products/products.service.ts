@@ -35,7 +35,7 @@ export class ProductsService {
     const { id } = me;
     await this.brandsService.findOneById(brandId);
     await this.categoriesService.findManyByIds(categoryIds);
-    const store = await this.storesService.getStoreByStoreAmdinId(id);
+    const store = await this.storesService.getStoreByStoreAdminId(id);
     const existing = await this.productsRepository.findOneByNameOrSlugInStore(store.id, name, slug);
     if (existing) throw new ConflictException("Product already exists");
 
@@ -80,7 +80,7 @@ export class ProductsService {
   }
 
   async update(me: UserPayload, id: string, data: UpdateProductDto): Promise<ResponseProductDto> {
-    const store = await this.storesService.getStoreByStoreAmdinId(me.id);
+    const store = await this.storesService.getStoreByStoreAdminId(me.id);
     const product = await this.productsRepository.findOneByIdAndStoreId(id, store.id);
     if (!product) throw new NotFoundException("Product not found");
 
@@ -98,7 +98,7 @@ export class ProductsService {
   }
 
   async delete(me: UserPayload, id: string): Promise<void> {
-    const store = await this.storesService.getStoreByStoreAmdinId(me.id);
+    const store = await this.storesService.getStoreByStoreAdminId(me.id);
     const product = await this.productsRepository.findOneByIdAndStoreId(id, store.id);
     if (!product) throw new NotFoundException("Product not found");
 

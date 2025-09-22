@@ -10,7 +10,7 @@ import { CreateStoreDto } from "./dto/create-store.dto";
 export class StoresRepository {
   constructor(private readonly prismaService: PrismaService) {}
 
-  async findStoreByStoreAmdinId(storeAdminId: string): Promise<Store | null> {
+  async findStoreByStoreAdminId(storeAdminId: string): Promise<Store | null> {
     return this.prismaService.store.findFirst({
       where: {
         admin: {
