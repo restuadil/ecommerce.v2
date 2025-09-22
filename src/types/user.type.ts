@@ -1,4 +1,4 @@
-import { User, UserRole, UserStatus } from "@prisma/client";
+import { Store, User, UserAddress, UserRole, UserStatus } from "@prisma/client";
 
 export interface ResponseUserDto {
   id: string;
@@ -14,6 +14,8 @@ export interface ResponseUserDto {
   avatar: string | null;
   createdAt: Date;
   updatedAt: Date;
+  Store?: Store;
+  UserAddress?: UserAddress[];
 }
 
 export type OmitPasswordUser = Omit<ResponseUserDto, "password">;
