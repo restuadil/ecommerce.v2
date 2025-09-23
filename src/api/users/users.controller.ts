@@ -6,10 +6,10 @@ import { Logger } from "winston";
 
 import { Roles } from "src/common/decortators/roles.decorator";
 import { ZodPipe } from "src/common/pipe/zod.pipe";
-import { OmitPasswordUser } from "src/types/user.type";
 import { ControllerResponse } from "src/types/web.type";
 
 import { QueryUserDto, queryUserSchema } from "./dto/query-user.dto";
+import { ResponseUserDto } from "./dto/response-user.dto";
 import { UsersService } from "./users.service";
 
 @Controller("users")
@@ -24,7 +24,7 @@ export class UsersController {
   @Roles(UserRole.SUPER_ADMIN)
   async findAll(
     @Query(new ZodPipe(queryUserSchema)) queryUserDto: QueryUserDto,
-  ): Promise<ControllerResponse<OmitPasswordUser[]>> {
+  ): Promise<ControllerResponse<Omit<ResponseUserDto, "password">[]>> {
     this.logger.info(`User Controller - FindAll`);
 
     const { data, meta } = await this.usersService.findMany(queryUserDto);

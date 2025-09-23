@@ -12,10 +12,10 @@ import { ProductsRepository } from "./products.repository";
 import { BrandsService } from "../brands/brands.service";
 import { CategoriesService } from "../categories/categories.service";
 import { CreateProductDto } from "./dto/create-product.dto";
-import { ResponseProductDto, toResponseProductDto } from "./dto/response-product.dto";
-import { StoresService } from "../stores/stores.service";
 import { QueryProductDto } from "./dto/query.product.dto";
+import { ResponseProductDto, toResponseProductDto } from "./dto/response-product.dto";
 import { UpdateProductDto } from "./dto/update-product.dto";
+import { UsersService } from "../users/users.service";
 
 @Injectable()
 export class ProductsService {
@@ -25,7 +25,7 @@ export class ProductsService {
     private readonly redisService: RedisService,
     private readonly brandsService: BrandsService,
     private readonly categoriesService: CategoriesService,
-    private readonly storesService: StoresService,
+    private readonly usersService: UsersService,
   ) {}
 
   async create(me: UserPayload, createProducDto: CreateProductDto): Promise<ResponseProductDto> {
@@ -35,11 +35,12 @@ export class ProductsService {
     const { id } = me;
     await this.brandsService.findOneById(brandId);
     await this.categoriesService.findManyByIds(categoryIds);
-    const store = await this.storesService.getStoreByStoreAmdinId(id);
-    const existing = await this.productsRepository.findOneByNameOrSlugInStore(store.id, name, slug);
+    const { storeId } = await this.usersService.getOneById(id);
+    if (!storeId) throw new NotFoundException("Store not found");
+    const existing = await this.productsRepository.findOneByNameOrSlugInStore(storeId, name, slug);
     if (existing) throw new ConflictException("Product already exists");
 
-    const product = await this.productsRepository.create(store.id, {
+    const product = await this.productsRepository.create(storeId, {
       ...createProducDto,
     });
 
@@ -80,12 +81,13 @@ export class ProductsService {
   }
 
   async update(me: UserPayload, id: string, data: UpdateProductDto): Promise<ResponseProductDto> {
-    const store = await this.storesService.getStoreByStoreAmdinId(me.id);
-    const product = await this.productsRepository.findOneByIdAndStoreId(id, store.id);
+    const { storeId } = await this.usersService.getOneById(me.id);
+    if (!storeId) throw new NotFoundException("Store not found");
+    const product = await this.productsRepository.findOneByIdAndStoreId(id, storeId);
     if (!product) throw new NotFoundException("Product not found");
 
     const existing = await this.productsRepository.findOneByNameOrSlugInStore(
-      store.id,
+      storeId,
       data.name ?? product.name,
       data.slug ?? product.slug,
     );
@@ -98,8 +100,9 @@ export class ProductsService {
   }
 
   async delete(me: UserPayload, id: string): Promise<void> {
-    const store = await this.storesService.getStoreByStoreAmdinId(me.id);
-    const product = await this.productsRepository.findOneByIdAndStoreId(id, store.id);
+    const { storeId } = await this.usersService.getOneById(me.id);
+    if (!storeId) throw new NotFoundException("Store not found");
+    const product = await this.productsRepository.findOneByIdAndStoreId(id, storeId);
     if (!product) throw new NotFoundException("Product not found");
 
     await this.productsRepository.delete(id);
