@@ -1,4 +1,4 @@
-import { User } from "@prisma/client";
+import { ResponseUserDto } from "src/api/users/dto/response-user.dto";
 
 export interface RegisterResponseDto {
   username: string;
@@ -10,7 +10,7 @@ export interface LoginResponseDto {
   refreshToken?: string;
 }
 
-export const toRegisterResponseDto = (data: User): RegisterResponseDto => {
+export const toRegisterResponseDto = (data: ResponseUserDto): RegisterResponseDto => {
   return {
     username: data.username,
     email: data.email,

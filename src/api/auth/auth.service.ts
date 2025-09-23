@@ -13,7 +13,6 @@ import { MailService } from "src/common/mail/mail.service";
 import { RedisService } from "src/common/redis/redis.service";
 import { ConfigService } from "src/config/config.service";
 import { UserPayload } from "src/types/jwt.type";
-import { deletePasswordUser, OmitPasswordUser } from "src/types/user.type";
 
 import { LoginDto } from "./dto/login-auth.dto";
 import { RegisterCustomerDto } from "./dto/register-customer.dto";
@@ -26,6 +25,7 @@ import {
 } from "./dto/response-auth.dto";
 import { UsersService } from "../users/users.service";
 import { ActivationDto } from "./dto/activation-auth.dto";
+import { ResponseUserDto } from "../users/dto/response-user.dto";
 @Injectable()
 export class AuthService {
   constructor(
@@ -144,10 +144,10 @@ export class AuthService {
     return toRegisterResponseDto(updatedUser);
   }
 
-  async me(me: UserPayload): Promise<OmitPasswordUser> {
+  async me(me: UserPayload): Promise<Omit<ResponseUserDto, "password">> {
     this.logger.info(`Fetching profile for user id: ${me.id}`);
-    const user = await this.usersService.getOneById(me.id);
-    return deletePasswordUser(user);
+    const { password: _, ...user } = await this.usersService.getOneById(me.id);
+    return user;
   }
 
   async resendActivation(resendActivationDto: ResendActivationDto): Promise<RegisterResponseDto> {
