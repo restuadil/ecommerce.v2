@@ -6,7 +6,10 @@ import { WinstonModule } from "nest-winston";
 import * as winston from "winston";
 
 import { AuthModule } from "./api/auth/auth.module";
+import { BrandsModule } from "./api/brands/brands.module";
 import { CategoriesModule } from "./api/categories/categories.module";
+import { ProductsModule } from "./api/products/products.module";
+import { StoresModule } from "./api/stores/stores.module";
 import { UsersModule } from "./api/users/users.module";
 import { CommonModule } from "./common/common.mocule";
 import { ConfigService } from "./config/config.service";
@@ -62,6 +65,9 @@ import { validateEnv } from "./config/env";
     AuthModule,
     UsersModule,
     CategoriesModule,
+    BrandsModule,
+    StoresModule,
+    ProductsModule,
   ],
   controllers: [],
   providers: [],

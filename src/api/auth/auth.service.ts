@@ -17,13 +17,15 @@ import { UserPayload } from "src/types/jwt.type";
 import { LoginDto } from "./dto/login-auth.dto";
 import { RegisterCustomerDto } from "./dto/register-customer.dto";
 import { RegisterStoreAdminDto } from "./dto/register-store-admin.dto";
+import { ResendActivationDto } from "./dto/resend-activation.auth.dto";
 import {
   LoginResponseDto,
   RegisterResponseDto,
   toRegisterResponseDto,
-} from "./dto/response-auth.dt";
+} from "./dto/response-auth.dto";
 import { UsersService } from "../users/users.service";
 import { ActivationDto } from "./dto/activation-auth.dto";
+import { ResponseUserDto } from "../users/dto/response-user.dto";
 @Injectable()
 export class AuthService {
   constructor(
@@ -101,8 +103,7 @@ export class AuthService {
 
     const { identifier, password } = loginDto;
 
-    const user = await this.usersService.findOneByEmailOrUsername(identifier, identifier);
-    if (!user) throw new ConflictException("Invalid credentials");
+    const user = await this.usersService.getOneByEmailOrUsername(identifier, identifier);
     if (!this.compare(password, user.password)) throw new ConflictException("Invalid credentials");
     if (user && user.status !== UserStatus.ACTIVE)
       throw new ConflictException("Please activate your account to login");
@@ -129,8 +130,7 @@ export class AuthService {
     this.logger.info(`Activating user with activation code: ${activationDto.activation_code}`);
     const { activation_code } = activationDto;
 
-    const user = await this.usersService.findOneByActivationCode(activation_code);
-    if (!user) throw new BadRequestException("Invalid activation code");
+    const user = await this.usersService.getOneByActivationCode(activation_code);
     if (user.status === UserStatus.ACTIVE) throw new BadRequestException("User is already active");
     if (user.activationExpiresAt && user.activationExpiresAt < new Date())
       throw new ConflictException("Activation code has expired");
@@ -142,5 +142,66 @@ export class AuthService {
     });
 
     return toRegisterResponseDto(updatedUser);
+  }
+
+  async me(me: UserPayload): Promise<Omit<ResponseUserDto, "password">> {
+    this.logger.info(`Fetching profile for user id: ${me.id}`);
+    const { password: _, ...user } = await this.usersService.getOneById(me.id);
+    return user;
+  }
+
+  async resendActivation(resendActivationDto: ResendActivationDto): Promise<RegisterResponseDto> {
+    this.logger.info(`Resending activation email to: ${resendActivationDto.email}`);
+    const user = await this.usersService.getOneByEmailOrUsername(
+      resendActivationDto.email,
+      resendActivationDto.email,
+    );
+    if (user.status === UserStatus.ACTIVE) throw new BadRequestException("User is already active");
+    const activation_code = randomBytes(32).toString("hex");
+    const activationExpiresAt = new Date(
+      Date.now() + (this.configService.get<number>("ACTIVATION_EXPIRATION_TIME") ?? 900000),
+    );
+
+    await this.usersService.updateUserById(user.id, {
+      activation_code,
+      activationExpiresAt,
+    });
+
+    await this.mailService.sendMail({
+      to: user.email,
+      subject: "Activate your account",
+      html: `<h1>Activate your account</h1>
+      <p>Please click the link below to activate your account:</p>
+      <a href="${this.configService.get<string>(
+        "CLIENT_HOST",
+      )}/activate/?activation_code=${activation_code}">Activate Account</a>
+      <p>This link will expire in 15 minutes.</p>
+      <p>Thank you!</p>`,
+    });
+
+    return toRegisterResponseDto(user);
+  }
+
+  async refreshToken(oldRefreshToken: string): Promise<LoginResponseDto> {
+    this.logger.info(`Refreshing token`);
+
+    const { email, id, roles, username }: UserPayload = this.jwtService.verify(oldRefreshToken, {
+      secret: this.configService.get<string>("JWT_REFRESH_SECRET"),
+    });
+
+    const storedRefreshToken = await this.redisService.get<string>(`refreshToken:${id}`);
+    if (!storedRefreshToken || storedRefreshToken !== oldRefreshToken)
+      throw new BadRequestException("Invalid refresh token");
+
+    const payload: UserPayload = { id, username, email, roles };
+    const { accessToken, refreshToken } = this.generateTokens(payload);
+
+    await this.redisService.set(
+      `refreshToken:${id}`,
+      refreshToken,
+      this.configService.get<number>("REDIS_TTL"),
+    );
+
+    return { accessToken, refreshToken };
   }
 }

@@ -14,16 +14,22 @@ import { Response } from "express";
 import { WINSTON_MODULE_PROVIDER } from "nest-winston";
 import { Logger } from "winston";
 
+import { Cookie } from "src/common/decortators/cookie.decorator";
+import { Me } from "src/common/decortators/me.decorator";
 import { Public } from "src/common/decortators/public.decorator";
 import { ZodPipe } from "src/common/pipe/zod.pipe";
+import { UserPayload } from "src/types/jwt.type";
 import { ControllerResponse } from "src/types/web.type";
 
 import { AuthService } from "./auth.service";
 import { ActivationDto, activationSchema } from "./dto/activation-auth.dto";
+import { CookieDto, cookieSchema } from "./dto/cookie.auth.dto";
 import { LoginDto, loginSchema } from "./dto/login-auth.dto";
 import { RegisterCustomerDto, registerCustomerSchema } from "./dto/register-customer.dto";
 import { RegisterStoreAdminDto, registerStoreAdminSchema } from "./dto/register-store-admin.dto";
-import { LoginResponseDto, RegisterResponseDto } from "./dto/response-auth.dt";
+import { ResendActivationDto, resendActivationSchema } from "./dto/resend-activation.auth.dto";
+import { LoginResponseDto, RegisterResponseDto } from "./dto/response-auth.dto";
+import { ResponseUserDto } from "../users/dto/response-user.dto";
 
 @Controller("auth")
 export class AuthController {
@@ -90,6 +96,51 @@ export class AuthController {
     return {
       message: "User activated successfully",
       data: result,
+    };
+  }
+
+  @Get("me")
+  @HttpCode(HttpStatus.OK)
+  async me(@Me() me: UserPayload): Promise<ControllerResponse<Omit<ResponseUserDto, "password">>> {
+    const result = await this.authService.me(me);
+    return {
+      message: "User profile fetched successfully",
+      data: result,
+    };
+  }
+
+  @Post("resend-activation")
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  async resendActivation(
+    @Body(new ZodPipe(resendActivationSchema)) resendActivationDto: ResendActivationDto,
+  ): Promise<ControllerResponse<RegisterResponseDto>> {
+    const result = await this.authService.resendActivation(resendActivationDto);
+    return {
+      message: "Activation email resent successfully",
+      data: result,
+    };
+  }
+  @Get("refresh-token")
+  @HttpCode(HttpStatus.OK)
+  @Public()
+  async refreshToken(
+    @Cookie("refreshToken", new ZodPipe(cookieSchema)) cookieDto: CookieDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<ControllerResponse<LoginResponseDto>> {
+    this.logger.info(`AuthController - refreshToken`);
+
+    const { accessToken, refreshToken } = await this.authService.refreshToken(cookieDto);
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none",
+    });
+
+    return {
+      message: "Token refreshed successfully",
+      data: { accessToken },
     };
   }
 }

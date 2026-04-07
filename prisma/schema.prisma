@@ -162,75 +162,19 @@ model Product {
   name            String
   slug            String            @unique
   description     String?
-  basePrice       Float?
+  price           Float
   status          ProductStatus     @default(ACTIVE)
   images          String[]
   ProductCategory ProductCategory[]
-  ProductVariant  ProductVariant[]
   brandId         String            @db.ObjectId
   brand           Brand             @relation(fields: [brandId], references: [id])
 
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  Review       Review[]
-  CartItem     CartItem[]
-  OrderItem    OrderItem[]
-  Wishlist     Wishlist[]
-  VariantGroup VariantGroup[]
-}
-
-// ===================== VARIANTS =====================
-
-model VariantGroup {
-  id        String  @id @default(auto()) @map("_id") @db.ObjectId
-  productId String  @db.ObjectId
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  name    String
-  options VariantOption[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("variant_groups")
-}
-
-model VariantOption {
-  id             String       @id @default(auto()) @map("_id") @db.ObjectId
-  variantGroupId String       @db.ObjectId
-  variantGroup   VariantGroup @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
-
-  value     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  productVariants ProductVariant[]
-
-  @@map("variant_options")
-}
-
-model ProductVariant {
-  id        String  @id @default(auto()) @map("_id") @db.ObjectId
-  productId String  @db.ObjectId
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  sku    String?       @unique
-  price  Float
-  stock  Int           @default(0)
-  images String[]      @default([])
-  status ProductStatus @default(ACTIVE)
-
-  optionIds String[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  CartItem        CartItem[]
-  OrderItem       OrderItem[]
-  VariantOption   VariantOption? @relation(fields: [variantOptionId], references: [id])
-  variantOptionId String?        @db.ObjectId
-
-  @@map("product_variants")
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  Review    Review[]
+  CartItem  CartItem[]
+  OrderItem OrderItem[]
+  Wishlist  Wishlist[]
 }
 
 // ========== REVIEWS & RATINGS ==========
@@ -277,10 +221,9 @@ model CartItem {
   updatedAt        DateTime @updatedAt
 
   // Relations
-  cart           Cart           @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  productVariant ProductVariant @relation(fields: [productVariantId], references: [id])
-  Product        Product?       @relation(fields: [productId], references: [id])
-  productId      String?        @db.ObjectId
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  Product   Product? @relation(fields: [productId], references: [id])
+  productId String?  @db.ObjectId
 
   @@unique([cartId, productVariantId]) // Prevent duplicate variants in cart
   @@map("cart_items")
@@ -336,9 +279,8 @@ model OrderItem {
   updatedAt        DateTime @updatedAt
 
   // Relations
-  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product        Product         @relation(fields: [productId], references: [id])
-  productVariant ProductVariant? @relation(fields: [productVariantId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
 
   @@map("order_items")
 }
